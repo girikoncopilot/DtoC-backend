@@ -1,0 +1,12 @@
+{
+  "name": "aef-protected-backend",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Protected backend service for the AI Engineering Framework thin-client VS Code extension.",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "check": "node --check src/framework.mjs && node --check src/jira.mjs && node --check src/repository-planner.mjs && node --check src/runtime-session.mjs && node --check src/server.mjs",
+    "export:repo": "node scripts/export-standalone.mjs"
+  }
+}
