@@ -1,13 +1,16 @@
-FROM node:20-alpine
+FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY package.json ./
-COPY .env.example ./
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app ./app
 COPY bundled-framework ./bundled-framework
-COPY scripts ./scripts
-COPY src ./src
+COPY framework ./framework
+COPY .env.example ./
+COPY README.md ./
 
 EXPOSE 8787
 
-CMD ["node", "src/server.mjs"]
+CMD ["sh", "-c", "uvicorn app.main:app --host ${AEF_HOST:-0.0.0.0} --port ${AEF_PORT:-8787}"]

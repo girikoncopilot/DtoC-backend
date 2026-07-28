@@ -1,0 +1,16 @@
+[project]
+name = "dtoc-backend"
+version = "0.3.0"
+description = "Protected FastAPI backend for the AI Engineering Framework"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.116.1",
+  "uvicorn[standard]==0.35.0",
+  "httpx==0.28.1",
+]
+
+[tool.uvicorn]
+factory = false
+app = "app.main:app"
+host = "127.0.0.1"
+port = 8787

@@ -2,7 +2,7 @@
 
 This service is the protected server-side runtime companion for the thin-client VS Code extension.
 
-It is now self-contained and no longer needs to read framework prompts or runtime files from the repository root. All required framework assets live under `bundled-framework/`.
+It now runs on **Python + FastAPI** and keeps the same HTTP contract and planning logic that previously lived in the Node backend.
 
 ## Purpose
 
@@ -39,21 +39,11 @@ This backend provides:
 ## Run Locally
 
 ```bash
-cd services/protected-backend
-node --check src/server.mjs
-node src/server.mjs
-```
-
-Or:
-
-```bash
-npm start
-```
-
-## Build / Validate
-
-```bash
-npm run check
+cd "/Users/mayankdhyani/Downloads/dtocbackend"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 127.0.0.1 --port 8787
 ```
 
 ## Docker
@@ -62,14 +52,6 @@ npm run check
 docker build -t dtoc-protected-backend .
 docker run --rm -p 8787:8787 --env-file .env dtoc-protected-backend
 ```
-
-## Export As Standalone Repo
-
-```bash
-npm run export:repo
-```
-
-This writes a backend-only folder to `exports/dtoc-protected-backend/` so you can move it into a separate private Git repository.
 
 ## Extension Configuration Example
 
@@ -81,20 +63,7 @@ In VS Code settings:
 - `aiEngineeringFramework.sessionEndpoint` = `/runtime/session`
 - `aiEngineeringFramework.apiToken` = same as `AEF_API_TOKEN` if auth is enabled
 
-## Performance Notes
-
-This scaffold intentionally avoids external dependencies and uses Node's built-in HTTP server to keep startup fast and reduce latency.
-
-For production rollout, place this service behind your internal network, add centralized auth, and connect it to the real Jira/Figma/runtime orchestration stack.
-
-Recommended final architecture:
-
-- repo 1: extension only
-- repo 2: backend only
-- backend deployed privately over HTTPS
-- extension configured with `aiEngineeringFramework.backendUrl`
-
-## Current behavior
+## Current Behavior
 
 If Jira credentials are configured, the backend attempts to:
 
@@ -107,10 +76,6 @@ If Jira credentials are not configured, the backend falls back to any requiremen
 
 ## Bundled Framework Assets
 
-The backend package includes the protected assets it needs under `bundled-framework/`, including:
-
-- prompt entry files
-- orchestration rule files
-- runtime definition files
+The backend package includes the protected assets it needs under `bundled-framework/`, and it also carries the fuller raw framework copy under `framework/`.
 
 These files stay server-side and are not shipped in the `.vsix`.
