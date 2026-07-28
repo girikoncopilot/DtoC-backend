@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-FRAMEWORK_ROOT = Path(__file__).resolve().parent.parent / "bundled-framework"
+FRAMEWORK_ROOT = Path(__file__).resolve().parent.parent / "framework"
 
 FRAMEWORK_PATHS = {
     "copilotInstructions": "copilot-instructions.md",

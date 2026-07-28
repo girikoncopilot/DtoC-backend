@@ -76,6 +76,6 @@ If Jira credentials are not configured, the backend falls back to any requiremen
 
 ## Bundled Framework Assets
 
-The backend package includes the protected assets it needs under `bundled-framework/`, and it also carries the fuller raw framework copy under `framework/`.
+The backend package uses `framework/` as its single server-side framework source of truth.
 
 These files stay server-side and are not shipped in the `.vsix`.
