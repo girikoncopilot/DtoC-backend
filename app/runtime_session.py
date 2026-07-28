@@ -4,13 +4,43 @@ import time
 from typing import Any
 
 from app.framework import build_framework_summary, build_protected_prompt, detect_skills, load_framework
-from app.jira import create_jira_client_from_env
+from app.jira import create_jira_client_from_env, extract_business_summary
 from app.repository_planner import enrich_repository_plan
 
 
 def normalize_jira_id(value: Any) -> str:
     return str(value or "").strip().upper()
 
+
+
+
+def normalize_forwarded_jira(jira: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(jira, dict):
+        return None
+
+    summary = str(jira.get("summary") or "").strip()
+    description_text = str(jira.get("descriptionText") or jira.get("description") or "").strip()
+    acceptance_criteria = jira.get("acceptanceCriteria") if isinstance(jira.get("acceptanceCriteria"), list) else []
+    comments = jira.get("comments") if isinstance(jira.get("comments"), list) else []
+    attachments = jira.get("attachments") if isinstance(jira.get("attachments"), list) else []
+    figma_links = jira.get("figmaLinks") if isinstance(jira.get("figmaLinks"), list) else []
+    labels = jira.get("labels") if isinstance(jira.get("labels"), list) else []
+    components = jira.get("components") if isinstance(jira.get("components"), list) else []
+    priority = str(jira.get("priority") or "").strip()
+
+    return {
+        "id": str(jira.get("id") or jira.get("key") or "").strip(),
+        "summary": summary,
+        "descriptionText": description_text,
+        "acceptanceCriteria": acceptance_criteria,
+        "comments": comments,
+        "attachments": attachments,
+        "figmaLinks": figma_links,
+        "labels": labels,
+        "components": components,
+        "priority": priority,
+        "businessSummary": str(jira.get("businessSummary") or extract_business_summary(summary, description_text, acceptance_criteria)).strip(),
+    }
 
 def normalize_workspace(workspace: dict[str, Any] | None) -> dict[str, Any]:
     source = workspace or {}
@@ -57,7 +87,8 @@ def build_planned_changes(repository_plan: dict[str, Any], jira_issue: dict[str,
 async def create_runtime_session(body: dict[str, Any], runtime_version: str, project_id: str) -> dict[str, Any]:
     jira_client = create_jira_client_from_env()
     jira_id = normalize_jira_id(body.get("jiraId"))
-    jira_issue = await jira_client.fetch_issue(jira_id) if jira_client else None
+    forwarded_jira = normalize_forwarded_jira(body.get("jira"))
+    jira_issue = forwarded_jira or (await jira_client.fetch_issue(jira_id) if jira_client else None)
     framework = load_framework()
     framework_summary = build_framework_summary(framework)
     workflow = str(body.get("workflow") or "DtoC").strip() or "DtoC"
@@ -78,7 +109,9 @@ async def create_runtime_session(body: dict[str, Any], runtime_version: str, pro
         f"Using protected runtime {runtime_version}.",
         f"Project context: {project_id}." if project_id else "No backend project id configured.",
         (
-            f"Jira retrieval succeeded for {jira_issue['id']}."
+            "Using Jira context supplied by extension."
+            if forwarded_jira
+            else f"Jira retrieval succeeded for {jira_issue['id']}."
             if jira_issue
             else "Requirement text supplied directly to backend session."
             if requirement_text
@@ -98,7 +131,7 @@ async def create_runtime_session(body: dict[str, Any], runtime_version: str, pro
         "requirementStatus": {
             "hasRequirementText": bool(requirement_text),
             "requiresUserInput": not bool(requirement_text),
-            "source": "jira" if jira_issue else ("direct-input" if requirement_text else "missing"),
+            "source": "extension-jira" if forwarded_jira else ("jira" if jira_issue else ("direct-input" if requirement_text else "missing")),
         },
         "frameworkContext": {
             "runtimeEntry": "Implement Jira Prompt",
